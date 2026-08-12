@@ -18,6 +18,7 @@ import { FavoritesDrawer } from '../components/FavoritesDrawer'
 import { CheckoutModal } from '../components/CheckoutModal'
 import { OrderSuccess } from '../components/OrderSuccess'
 import { Toast } from '../components/Toast'
+import { SmartImg } from '../components/SmartImg'
 
 const STATUS_LABEL = {
   new: { uz: 'Yangi', ru: 'Новый', color: 'bg-blue-50 text-blue-700' },
@@ -145,7 +146,7 @@ export default function Account() {
               {favProducts.map(p => (
                 <button key={p.id} onClick={() => openProduct(p.id)} className="text-left">
                   <div className="aspect-[3/4] rounded-xl overflow-hidden bg-brand-50">
-                    <img src={p.images?.[0]} alt="" className="w-full h-full object-cover" />
+                    <SmartImg src={p.images?.[0]} product={p} alt="" className="w-full h-full object-cover" />
                   </div>
                   <div className="mt-2 text-sm font-semibold line-clamp-1">{p.name[lang]}</div>
                   <div className="text-sm font-bold">{fmtSom(p.price)}</div>

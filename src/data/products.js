@@ -1,8 +1,68 @@
 // Namuna ayollar mahsulotlari. Firebase/Supabase konfiguratsiya qilinsa,
 // DB'dagi `products` kolleksiyasi shu tuzilishga mos bo'lishi kerak.
+//
+// Rasmlar — SVG placeholder (kiyim ikonasi + nom + brend). Admin panelda
+// yangi mahsulot qo'shishda haqiqiy rasmlar Supabase Storage'ga yuklanadi
+// va bu placeholderlar o'rniga chiroyli photolar chiqadi.
 
-const img = (id, w = 800) =>
-  `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&q=80`
+const CATEGORY_ICON = {
+  dresses: 'M75 40h30l-8 15 25 130h-64l25-130-8-15zM75 40l-12 12M105 40l12 12',
+  blouses: 'M60 40h60l-8 20-10 100h-24l-10-100-8-20zM70 40l-15-8 20-12h50l20 12-15 8',
+  skirts: 'M60 60h60l-15 100h-30zM70 60c0-10 5-20 20-20s20 10 20 20',
+  pants: 'M65 40h50l5 130h-25l-8-70-8 70h-24z',
+  suits: 'M55 40h70v20l-15 90h-40l-15-90zM90 40v70',
+  jackets: 'M50 45h80v100h-80zM90 45v100M50 45l-10 15v70l10 5M130 45l10 15v70l-10 5',
+  knitwear: 'M50 55h80l-5 90h-70zM60 55v-8a10 10 0 0 1 20 0M100 55v-8a10 10 0 0 1 20 0',
+  shoes: 'M40 120c0-10 10-20 25-25l30-15 25 5c15 5 30 15 30 25v10H40zM40 130h120',
+  accessories: 'M55 60c0-15 15-25 35-25s35 10 35 25v15h-70zM45 75h90l5 55h-100z'
+}
+
+function catIcon(cat) {
+  return CATEGORY_ICON[cat] || CATEGORY_ICON.dresses
+}
+
+function esc(s = '') {
+  return String(s).replace(/[<>&"']/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&apos;' }[c]))
+}
+
+function trunc(s, n) { return s.length > n ? s.slice(0, n - 1) + '…' : s }
+
+function img(product, variant = 0) {
+  const grads = [
+    ['#BE185D', '#EC4899'],
+    ['#9D174D', '#F472B6'],
+    ['#831843', '#DB2777']
+  ]
+  const [c1, c2] = grads[variant % 3]
+  const name = trunc(product.name.uz, 26)
+  const icon = catIcon(product.category)
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="${c1}"/>
+        <stop offset="100%" stop-color="${c2}"/>
+      </linearGradient>
+      <radialGradient id="r" cx="0.7" cy="0.3" r="0.8">
+        <stop offset="0%" stop-color="#ffffff" stop-opacity="0.2"/>
+        <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <rect width="600" height="800" fill="url(#g)"/>
+    <rect width="600" height="800" fill="url(#r)"/>
+    <g transform="translate(210 250) scale(2.2)" fill="none" stroke="#ffffff" stroke-opacity="0.6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+      <path d="${icon}"/>
+    </g>
+    <text x="300" y="640" text-anchor="middle" fill="#ffffff" font-family="Inter, system-ui, sans-serif" font-weight="800" font-size="34" opacity="0.98">${esc(name)}</text>
+    <text x="300" y="680" text-anchor="middle" fill="#ffffff" font-family="Inter, system-ui, sans-serif" font-weight="500" font-size="20" opacity="0.75">${esc(product.brand)}</text>
+    <text x="300" y="760" text-anchor="middle" fill="#ffffff" font-family="Inter, system-ui, sans-serif" font-weight="800" font-size="14" letter-spacing="6" opacity="0.9">ANISA SHOP</text>
+  </svg>`
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`
+}
+
+function withImages(p) {
+  return { ...p, images: [img(p, 0), img(p, 1), img(p, 2)] }
+}
 
 export const CATEGORIES = [
   { id: 'all', key: 'all' },
@@ -32,8 +92,7 @@ export const COLORS = [
 ]
 
 export const PRODUCTS = [
-  {
-    id: 'a01', category: 'dresses', brand: 'Anisa',
+  { id: 'a01', category: 'dresses', brand: 'Anisa',
     name: { uz: 'Kuz oqshom ko\'ylagi', ru: 'Осеннее вечернее платье' },
     price: 549000, oldPrice: 690000,
     sizes: ['XS', 'S', 'M', 'L', 'XL'], availableSizes: ['S', 'M', 'L'],
@@ -42,11 +101,8 @@ export const PRODUCTS = [
     description: {
       uz: 'Nafis midi ko\'ylak — oqshom va rasmiy tadbirlar uchun mos.',
       ru: 'Изящное миди-платье для вечерних и официальных мероприятий.'
-    },
-    images: [img('1595777457583-95e059d581b8'), img('1585487000160-6ebcfceb0d03'), img('1566174053879-31528523f8ae')]
-  },
-  {
-    id: 'a02', category: 'dresses', brand: 'Zara',
+    } },
+  { id: 'a02', category: 'dresses', brand: 'Zara',
     name: { uz: 'Yozgi gulli ko\'ylak', ru: 'Летнее платье с цветочным принтом' },
     price: 389000,
     sizes: ['XS', 'S', 'M', 'L'], availableSizes: ['S', 'M', 'L'],
@@ -55,11 +111,8 @@ export const PRODUCTS = [
     description: {
       uz: 'Yengil va shinam yozgi ko\'ylak, gulli chizmalar bilan.',
       ru: 'Лёгкое и удобное летнее платье с цветочным узором.'
-    },
-    images: [img('1572804013309-59a88b7e92f1'), img('1618244972963-dbee1a7edc95')]
-  },
-  {
-    id: 'a03', category: 'blouses', brand: 'Mango',
+    } },
+  { id: 'a03', category: 'blouses', brand: 'Mango',
     name: { uz: 'Ipak bluzka', ru: 'Шёлковая блузка' },
     price: 329000, oldPrice: 419000,
     sizes: ['XS', 'S', 'M', 'L', 'XL'], availableSizes: ['XS', 'S', 'M', 'L'],
@@ -68,11 +121,8 @@ export const PRODUCTS = [
     description: {
       uz: 'Yumshoq va nafis ipak bluzka. Ofis va kunlik uslub uchun.',
       ru: 'Мягкая и изящная шёлковая блузка. Для офиса и повседневного стиля.'
-    },
-    images: [img('1551048632-24e444b48a3e'), img('1582142306909-195724d33ffc')]
-  },
-  {
-    id: 'a04', category: 'blouses', brand: 'H&M',
+    } },
+  { id: 'a04', category: 'blouses', brand: 'H&M',
     name: { uz: 'Klassik oq ko\'ylak', ru: 'Классическая белая рубашка' },
     price: 259000,
     sizes: ['XS', 'S', 'M', 'L', 'XL'], availableSizes: ['S', 'M', 'L', 'XL'],
@@ -81,11 +131,8 @@ export const PRODUCTS = [
     description: {
       uz: 'Har qanday uslubga mos, klassik oq ko\'ylak.',
       ru: 'Классическая белая рубашка, подходит к любому стилю.'
-    },
-    images: [img('1564257577154-90a1147c02fe'), img('1588117260148-b47818741c74')]
-  },
-  {
-    id: 'a05', category: 'skirts', brand: 'Bershka',
+    } },
+  { id: 'a05', category: 'skirts', brand: 'Bershka',
     name: { uz: 'Midi yubka, plisirovka', ru: 'Плиссированная миди-юбка' },
     price: 279000,
     sizes: ['XS', 'S', 'M', 'L'], availableSizes: ['S', 'M'],
@@ -94,11 +141,8 @@ export const PRODUCTS = [
     description: {
       uz: 'Yengil va nafis plisirovka yubka.',
       ru: 'Лёгкая и изящная плиссированная юбка.'
-    },
-    images: [img('1583496661160-fb5886a13d44'), img('1594633312681-425c7b97ccd1')]
-  },
-  {
-    id: 'a06', category: 'skirts', brand: 'Zara',
+    } },
+  { id: 'a06', category: 'skirts', brand: 'Zara',
     name: { uz: 'Charm mini yubka', ru: 'Кожаная мини-юбка' },
     price: 449000,
     sizes: ['XS', 'S', 'M', 'L'], availableSizes: ['XS', 'S', 'M'],
@@ -107,11 +151,8 @@ export const PRODUCTS = [
     description: {
       uz: 'Zamonaviy uslub uchun charm yubka.',
       ru: 'Кожаная юбка для современного стиля.'
-    },
-    images: [img('1585487000120-4e7c2ec55f56'), img('1554330097-fb85b9d99cba')]
-  },
-  {
-    id: 'a07', category: 'pants', brand: 'Massimo Dutti',
+    } },
+  { id: 'a07', category: 'pants', brand: 'Massimo Dutti',
     name: { uz: 'Yuqori bel shim', ru: 'Брюки с высокой посадкой' },
     price: 429000, oldPrice: 549000,
     sizes: ['XS', 'S', 'M', 'L', 'XL'], availableSizes: ['S', 'M', 'L'],
@@ -119,12 +160,9 @@ export const PRODUCTS = [
     composition: { uz: '70% jun, 30% polyester', ru: '70% шерсть, 30% полиэстер' },
     description: {
       uz: 'Yuqori belli klassik shim. Kunlik va rasmiy uslub uchun.',
-      ru: 'Классические брюки с высокой посадкой. Для повседневного и делового стиля.'
-    },
-    images: [img('1584370848010-d7fe6bc767ec'), img('1594633312681-425c7b97ccd1')]
-  },
-  {
-    id: 'a08', category: 'pants', brand: 'Mango',
+      ru: 'Классические брюки с высокой посадкой.'
+    } },
+  { id: 'a08', category: 'pants', brand: 'Mango',
     name: { uz: 'Keng oyoq jinsi', ru: 'Джинсы широкого кроя' },
     price: 359000,
     sizes: ['XS', 'S', 'M', 'L', 'XL'], availableSizes: ['S', 'M', 'L', 'XL'],
@@ -133,11 +171,8 @@ export const PRODUCTS = [
     description: {
       uz: 'Zamonaviy keng oyoq jinsi shim.',
       ru: 'Современные джинсы широкого кроя.'
-    },
-    images: [img('1541099649105-f69ad21f3246'), img('1548883354-94bcfe321cbb')]
-  },
-  {
-    id: 'a09', category: 'jackets', brand: 'Zara',
+    } },
+  { id: 'a09', category: 'jackets', brand: 'Zara',
     name: { uz: 'Uzun jun palto', ru: 'Длинное шерстяное пальто' },
     price: 1290000,
     sizes: ['XS', 'S', 'M', 'L'], availableSizes: ['S', 'M'],
@@ -146,11 +181,8 @@ export const PRODUCTS = [
     description: {
       uz: 'Sifatli va issiq palto. Kuz-qish uchun.',
       ru: 'Качественное и тёплое пальто. Для осени и зимы.'
-    },
-    images: [img('1544022613-e87ca75a784a'), img('1520975954732-35dd22299614')]
-  },
-  {
-    id: 'a10', category: 'jackets', brand: 'Bershka',
+    } },
+  { id: 'a10', category: 'jackets', brand: 'Bershka',
     name: { uz: 'Charm kurtka', ru: 'Кожаная куртка' },
     price: 890000, oldPrice: 1090000,
     sizes: ['XS', 'S', 'M', 'L', 'XL'], availableSizes: ['S', 'M', 'L'],
@@ -159,11 +191,8 @@ export const PRODUCTS = [
     description: {
       uz: 'Zamonaviy klassik charm kurtka.',
       ru: 'Современная классическая кожаная куртка.'
-    },
-    images: [img('1551028719-00167b16eac5'), img('1591047139829-d91aecb6caea')]
-  },
-  {
-    id: 'a11', category: 'knitwear', brand: 'H&M',
+    } },
+  { id: 'a11', category: 'knitwear', brand: 'H&M',
     name: { uz: 'Merinos svitari', ru: 'Свитер из мериноса' },
     price: 389000,
     sizes: ['XS', 'S', 'M', 'L', 'XL'], availableSizes: ['XS', 'S', 'M', 'L', 'XL'],
@@ -172,11 +201,8 @@ export const PRODUCTS = [
     description: {
       uz: 'Yumshoq va issiq oversize svitar.',
       ru: 'Мягкий и тёплый oversize свитер.'
-    },
-    images: [img('1608744882201-52a7f7f3dfa2'), img('1620799140408-edc6dcb6d633')]
-  },
-  {
-    id: 'a12', category: 'knitwear', brand: 'Mango',
+    } },
+  { id: 'a12', category: 'knitwear', brand: 'Mango',
     name: { uz: 'Uzun kardigan', ru: 'Длинный кардиган' },
     price: 449000,
     sizes: ['XS', 'S', 'M', 'L'], availableSizes: ['S', 'M'],
@@ -185,11 +211,8 @@ export const PRODUCTS = [
     description: {
       uz: 'Yumshoq va nafis kardigan.',
       ru: 'Мягкий и изящный кардиган.'
-    },
-    images: [img('1606813907291-d86efa9b94db'), img('1516762689617-e1cffcef479d')]
-  },
-  {
-    id: 'a13', category: 'shoes', brand: 'Zara',
+    } },
+  { id: 'a13', category: 'shoes', brand: 'Zara',
     name: { uz: 'Klassik pashniyalar', ru: 'Классические лодочки' },
     price: 690000,
     sizes: ['36', '37', '38', '39', '40'], availableSizes: ['37', '38', '39'],
@@ -198,11 +221,8 @@ export const PRODUCTS = [
     description: {
       uz: 'Rasmiy tadbirlar uchun klassik pashniyalar.',
       ru: 'Классические лодочки для официальных случаев.'
-    },
-    images: [img('1543163521-1bf539c55dd2'), img('1596703263926-eb0762ee17e4')]
-  },
-  {
-    id: 'a14', category: 'shoes', brand: 'H&M',
+    } },
+  { id: 'a14', category: 'shoes', brand: 'H&M',
     name: { uz: 'Oq krossovkalar', ru: 'Белые кроссовки' },
     price: 549000, oldPrice: 649000,
     sizes: ['36', '37', '38', '39', '40'], availableSizes: ['36', '37', '38', '39', '40'],
@@ -211,11 +231,8 @@ export const PRODUCTS = [
     description: {
       uz: 'Har kuni kiyish uchun qulay krossovkalar.',
       ru: 'Удобные кроссовки на каждый день.'
-    },
-    images: [img('1542291026-7eec264c27ff'), img('1595950653106-6c9ebd614d3a')]
-  },
-  {
-    id: 'a15', category: 'accessories', brand: 'Anisa',
+    } },
+  { id: 'a15', category: 'accessories', brand: 'Anisa',
     name: { uz: 'Ipak sharf', ru: 'Шёлковый платок' },
     price: 189000,
     sizes: ['One'], availableSizes: ['One'],
@@ -224,11 +241,8 @@ export const PRODUCTS = [
     description: {
       uz: 'Nafis va yengil ipak sharf.',
       ru: 'Изящный и лёгкий шёлковый платок.'
-    },
-    images: [img('1601924381810-e9a1a4d8f6b1'), img('1622290291165-d341f1938345')]
-  },
-  {
-    id: 'a16', category: 'accessories', brand: 'Zara',
+    } },
+  { id: 'a16', category: 'accessories', brand: 'Zara',
     name: { uz: 'Charm sumka', ru: 'Кожаная сумка' },
     price: 549000, oldPrice: 690000,
     sizes: ['One'], availableSizes: ['One'],
@@ -237,7 +251,5 @@ export const PRODUCTS = [
     description: {
       uz: 'Sifatli va zamonaviy charm sumka.',
       ru: 'Качественная и современная кожаная сумка.'
-    },
-    images: [img('1584917865442-de89df76afd3'), img('1590874103328-eac38a683ce7')]
-  }
-]
+    } }
+].map(withImages)
